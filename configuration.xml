@@ -1,0 +1,10 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<!-- generic configuration file -->
+<properties>
+	<background>
+		<red>0</red>
+		<green>134</green>
+		<blue>179</blue>
+	</background>
+	<etc state="object"/>
+</properties>
