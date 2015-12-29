@@ -148,6 +148,11 @@ int validate(string source, stringstream& parsable)
 						whitespace++;
 						break;
 					}
+					if(parsable.tellp() > 0)
+					{
+						prolog = 3;
+						break;
+					}
 					prolog++;
 				}
 				else
