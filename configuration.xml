@@ -3,8 +3,8 @@
 <root state="solid" size="400" rank="B">
 	<light status="green"/>
 	<plane dimensions="2">
-		<x units="kg"></x>
-		<y units="m"></y>
-		<z units="s"></z>
+		<x units="kg">1</x>
+		<y units="m">5</y>
+		<z units="s">2</z>
 	</plane>
 </root>
