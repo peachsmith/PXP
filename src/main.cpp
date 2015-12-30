@@ -12,6 +12,11 @@
 #define ERR_WHITESPACE -7
 #define ERR_ATTRIBUTES -8
 
+const unsigned int TAG_OPEN = 1;
+const unsigned int TAG_CLOSE = 2;
+const unsigned int TAG_SINGLE = 3;
+const unsigned int TAG_PROLOG = 4;
+
 using namespace std;
 
 struct attr_t
@@ -20,29 +25,27 @@ struct attr_t
 	string value;
 };
 
-struct elem_t
+struct tag_t
 {
 	string name;
-	string text;
-	int child_capacity;
-	int child_count;
-	int attr_capacity;
-	int attr_count;
-	elem_t* children;
-	attr_t* attributes;
+	int type;
+	vector<attr_t*> attributes;
+};
+
+struct elem_t
+{
+	tag_t opening_tag;
+	tag_t closing_tag;
+	vector<string> text_content;
+	vector<elem_t*> children;
 };
 
 int isWhitespace(char c);
 int validate(string source, stringstream& parsable);
 int parse(string parsable);
 
-int parseTag(string tag);
-int parseAttributes(string attributes);
-
-void resizeAttributes(elem_t* parent);
-void addAttribute(elem_t* parent, attr_t* attribute);
-void resizeChildElements(elem_t* parent);
-void addChildElement(elem_t* parent, elem_t* child);
+int parseTag(string tag_string, tag_t* tag);
+int parseAttributes(string attr_string, vector<attr_t*>& attributes);
 
 int main()
 {	
@@ -256,26 +259,66 @@ int parse(string source)
 	whitespace = 0;
 	
 	stringstream tag_builder;
+	stringstream text_builder;
+	
+	vector<string> text;
 	
 	for(int i = 0; i < len; i++)
 	{
 		if(tag)
 			tag_builder << source[i];
+		else if(source[i] != '<')
+			text_builder << source[i];
+		
 		if(source[i] == '<' && !quotes)
 		{
+			text.push_back(text_builder.str());
+			text_builder.str(string());
+			text_builder.clear();
 			tag++;
 			tag_builder << source[i];
 		}
 		else if(source[i] == '>' && !quotes)
 		{
 			tag--;
-			if(parseTag(tag_builder.str()))
+			// parse the tag
+			tag_t* tag_node = new tag_t;
+			if(parseTag(tag_builder.str(), tag_node))
 			{
 				tag_builder.str(string());
 				tag_builder.clear();
+				
+				cout << "tag: " << endl;
+				cout << "    name: " << tag_node->name << endl;
+				cout << "    type: ";
+				
+				if(tag_node->type == TAG_OPEN)
+					cout << "OPEN" << endl;
+				else if(tag_node->type == TAG_CLOSE)
+					cout << "CLOSE" << endl;
+				else if(tag_node->type == TAG_SINGLE)
+					cout << "SINGLE" << endl;
+				else if(tag_node->type == TAG_PROLOG)
+					cout << "PROLOG" << endl;
+				
+				if(tag_node->attributes.size() > 0)
+				{
+					cout << "    attributes:" << endl;
+					for(int i = 0; i < tag_node->attributes.size(); i++)
+					{
+						cout << "        attribute:" << endl;
+						cout << "            name: " << tag_node->attributes[i]->name << endl;
+						cout << "            value: " << tag_node->attributes[i]->value << endl;
+						delete tag_node->attributes[i];
+					}
+				}
+				delete tag_node;
 			}
 			else
+			{
+				delete tag_node;
 				return 1;
+			}
 		}
 		else if(source[i] == '\'')
 		{
@@ -301,6 +344,13 @@ int parse(string source)
 		}
 	}
 	
+	if(text.size() > 0)
+	{
+		cout << "text:" << endl;
+		for(int i = 0; i < text.size(); i++)
+			cout << text[i] << endl;
+	}
+	
 	//cout << "tag: " << tag << endl;
 	//cout << "open: " << open << endl;
 	//cout << "quotes: " << quotes << endl;
@@ -322,113 +372,117 @@ int parse(string source)
 		return 0;
 }
 
-int parseTag(string tag)
+int parseTag(string tag_string, tag_t* tag)
 {
 	stringstream name_builder;
 	stringstream attr_builder;
 	string tag_name;
-	string tag_type;
-	size_t len = tag.length();
+	int tag_type;
+	size_t len = tag_string.length();
+	vector<attr_t*> attributes;
+	string attr_string;
 	
-	if(tag[1] == '/')
+	if(tag_string[1] == '/')
 	{
-		tag_type = "closing";
+		tag_type = TAG_CLOSE;
 		int i = 2;
-		while(tag[i] != ' ' && tag[i] != '>')
+		while(tag_string[i] != ' ' && tag_string[i] != '>')
 		{
-			name_builder << tag[i++];
+			name_builder << tag_string[i++];
 		}
 	}
-	else if(tag[1] != '?')
+	else if(tag_string[1] != '?')
 	{
-		if(tag[len - 2] == '/')
-			tag_type = "single";
+		if(tag_string[len - 2] == '/')
+			tag_type = TAG_SINGLE;
 		else
-			tag_type = "opening";
+			tag_type = TAG_OPEN;
 		int i = 1;
-		while(tag[i] != ' ' && tag[i] != '>' && tag[i] != '/')
+		while(tag_string[i] != ' ' && tag_string[i] != '>' && tag_string[i] != '/')
 		{
-			if(tag[i] == '=' || tag[i] == '\'' || tag[i] == '"')
+			if(tag_string[i] == '=' || tag_string[i] == '\'' || tag_string[i] == '"')
 				return 0;
-			name_builder << tag[i++];
+			name_builder << tag_string[i++];
 		}
 		
-		while(isWhitespace(tag[i]))
+		while(isWhitespace(tag_string[i]))
 			i++;
 		
-		if(tag[i] != '>')
+		if(tag_string[i] != '>')
 		{
-			if(tag[i] == '/')
+			if(tag_string[i] == '/')
 				i++;
-			while(tag[i] != '>' && tag[i] != '/')
+			while(tag_string[i] != '>' && tag_string[i] != '/')
 			{
-				attr_builder << tag[i++];
+				attr_builder << tag_string[i++];
 			}
 		}
 	}
-	else if(tag[1] == '?')
+	else if(tag_string[1] == '?')
 	{
-		tag_type = "prolog";
+		tag_type = TAG_PROLOG;
 		int i = 2;
-		while(tag[i] != ' ' && tag[i] != '?')
+		while(tag_string[i] != ' ' && tag_string[i] != '?')
 		{
-			name_builder << tag[i++];
+			name_builder << tag_string[i++];
 		}
 		
-		while(isWhitespace(tag[i]))
+		while(isWhitespace(tag_string[i]))
 			i++;
 		
-		if(tag[i] != '?')
+		if(tag_string[i] != '?')
 		{
-			if(tag[i] == '?')
+			if(tag_string[i] == '?')
 				i++;
-			while(tag[i] != '>' && tag[i] != '?')
+			while(tag_string[i] != '>' && tag_string[i] != '?')
 			{
-				attr_builder << tag[i++];
+				attr_builder << tag_string[i++];
 			}
 		}
 	}
-	
-	cout << "tag:" << endl;
 	
 	tag_name = name_builder.str();
-	cout << "    type: " << tag_type << endl;
-	cout << "    name: " << name_builder.str() << endl;
+	
+	tag->name = tag_name;
+	tag->type = tag_type;
+	
 	if(attr_builder.tellp() > 0)
 	{
-		cout << "    attributes:" << endl;
-		string attributes = attr_builder.str();
-		int attr_parse = parseAttributes(attributes);
+		attr_string = attr_builder.str();
+		int attr_parse = parseAttributes(attr_string, attributes);
 		if(!attr_parse)
 		{
 			cout << "error while parsing attributes" << endl;
 			return 0;
+		}
+		else
+		{
+			tag->attributes = attributes;
 		}
 	}
 	
 	return 1;
 }
 
-int parseAttributes(string attributes)
+int parseAttributes(string attr_string, vector<attr_t*>& attributes)
 {
 	int nam = 0;
 	int equ = 0;
 	int val = 0;
+	int error = 0;
+	int i = 0;
 	
 	stringstream name_builder;
 	stringstream value_builder;
 	
-	vector<attr_t> attrs;
+	size_t len = attr_string.length();
 	
-	size_t len = attributes.length();
-	
-	int error = 0;
-	int i = 0;
 	if(len < 4)
 		return 0;
+	
 	while(i < len)
 	{
-		while(isWhitespace(attributes[i]) && i < len - 1)
+		while(isWhitespace(attr_string[i]) && i < len - 1)
 		{
 			i++;
 		}
@@ -438,10 +492,10 @@ int parseAttributes(string attributes)
 			if(nam == equ && equ == val)
 			{
 				// get the name
-				while(!isWhitespace(attributes[i]) && attributes[i] != '=' 
-					&& attributes[i] != '\'' && attributes[i] != '"' && i < len - 1)
+				while(!isWhitespace(attr_string[i]) && attr_string[i] != '=' 
+					&& attr_string[i] != '\'' && attr_string[i] != '"' && i < len - 1)
 				{
-					name_builder << attributes[i++];
+					name_builder << attr_string[i++];
 				}
 				
 				if(name_builder.tellp() > 0)
@@ -449,10 +503,10 @@ int parseAttributes(string attributes)
 					nam++;
 				}
 				
-				while(isWhitespace(attributes[i]) && i < len - 1)
+				while(isWhitespace(attr_string[i]) && i < len - 1)
 					i++;
 				
-				if(attributes[i] == '=')
+				if(attr_string[i] == '=')
 				{
 					if(!nam)
 					{
@@ -462,23 +516,23 @@ int parseAttributes(string attributes)
 					equ++;
 					i++;
 				}
-				else if(attributes[i] == '\'' || attributes[i] == '"')
+				else if(attr_string[i] == '\'' || attr_string[i] == '"')
 				{
 					error++;
 					break;
 				}
 				
-				while(isWhitespace(attributes[i]) && i < len - 1)
+				while(isWhitespace(attr_string[i]) && i < len - 1)
 					i++;
 				
-				if(attributes[i] == '\'')
+				if(attr_string[i] == '\'')
 				{
 					i++;
-					while(attributes[i] != '\'' && i < len - 1)
+					while(attr_string[i] != '\'' && i < len - 1)
 					{
-						value_builder << attributes[i++];
+						value_builder << attr_string[i++];
 					}
-					if(attributes[i] == '\'')
+					if(attr_string[i] == '\'')
 					{
 						val++;
 					}
@@ -488,14 +542,14 @@ int parseAttributes(string attributes)
 						break;
 					}
 				}
-				else if(attributes[i] == '"')
+				else if(attr_string[i] == '"')
 				{
 					i++;
-					while(attributes[i] != '"' && i < len - 1)
+					while(attr_string[i] != '"' && i < len - 1)
 					{
-						value_builder << attributes[i++];
+						value_builder << attr_string[i++];
 					}
-					if(attributes[i] == '"')
+					if(attr_string[i] == '"')
 					{
 						val++;
 					}
@@ -512,9 +566,12 @@ int parseAttributes(string attributes)
 		{
 			if(nam)
 			{
-				cout << "        attribute:" << endl;
-				cout << "            name: " << name_builder.str() << endl;
-				cout << "            value: " << value_builder.str() << endl;
+				attr_t* attr = new attr_t;
+				attr->name = name_builder.str();
+				attr->value = value_builder.str();
+
+				attributes.push_back(attr);
+				
 				nam = 0;
 				equ = 0;
 				val = 0;
@@ -538,50 +595,5 @@ int parseAttributes(string attributes)
 	else if(error)
 		return 0;
 	else
-	{
-		
 		return 1;
-	}
-}
-
-void resizeAttributes(elem_t* parent)
-{
-	int capacity = parent->attr_capacity + parent->attr_capacity / 2;
-	attr_t* attributes = new attr_t[capacity];
-	
-	for(int i = 0; i < parent->attr_capacity; i++)
-		attributes[i] = parent->attributes[i];
-	
-	delete[] parent->attributes;
-	parent->attributes = attributes;
-	parent->attr_capacity = capacity;
-}
-
-void addAttribute(elem_t* parent, attr_t* attribute)
-{
-	if(parent->attr_count == parent->attr_capacity)
-		resizeAttributes(parent);
-	
-	parent->attributes[parent->attr_count++] = *attribute;
-}
-
-void resizeChildElements(elem_t* parent)
-{
-	int capacity = parent->child_capacity + parent->child_capacity / 2;
-	elem_t* children = new elem_t[capacity];
-	
-	for(int i = 0; i < parent->child_capacity; i++)
-		children[i] = parent->children[i];
-	
-	delete[] parent->children;
-	parent->children = children;
-	parent->child_capacity = capacity;
-}
-
-void addChildElement(elem_t* parent, elem_t* child)
-{
-	if(parent->child_count == parent->child_capacity)
-		resizeChildElements(parent);
-	
-	parent->children[parent->child_count++] = *child;
 }
