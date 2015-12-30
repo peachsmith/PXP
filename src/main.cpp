@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <iomanip>
 
 #define ERR_LENGTH -1
 #define ERR_TAG -2
@@ -249,6 +250,7 @@ int parse(string source)
 	int comment;
 	int prolog;
 	int whitespace;
+	int error = 0;
 	size_t len = source.length();
 	
 	tag = 0;
@@ -262,19 +264,23 @@ int parse(string source)
 	stringstream text_builder;
 	
 	vector<string> text;
+	vector<tag_t*> tags;
 	
 	for(int i = 0; i < len; i++)
 	{
 		if(tag)
 			tag_builder << source[i];
-		else if(source[i] != '<')
+		else if(source[i] != '<' && open)
 			text_builder << source[i];
 		
 		if(source[i] == '<' && !quotes)
 		{
-			text.push_back(text_builder.str());
-			text_builder.str(string());
-			text_builder.clear();
+			if(text_builder.tellp() > 0)
+			{
+				text.push_back(text_builder.str());
+				text_builder.str(string());
+				text_builder.clear();
+			}
 			tag++;
 			tag_builder << source[i];
 		}
@@ -285,39 +291,19 @@ int parse(string source)
 			tag_t* tag_node = new tag_t;
 			if(parseTag(tag_builder.str(), tag_node))
 			{
+				if(tag_node->type == TAG_OPEN)
+					open++;
+				else if(tag_node->type == TAG_CLOSE)
+					open--;
 				tag_builder.str(string());
 				tag_builder.clear();
-				
-				cout << "tag: " << endl;
-				cout << "    name: " << tag_node->name << endl;
-				cout << "    type: ";
-				
-				if(tag_node->type == TAG_OPEN)
-					cout << "OPEN" << endl;
-				else if(tag_node->type == TAG_CLOSE)
-					cout << "CLOSE" << endl;
-				else if(tag_node->type == TAG_SINGLE)
-					cout << "SINGLE" << endl;
-				else if(tag_node->type == TAG_PROLOG)
-					cout << "PROLOG" << endl;
-				
-				if(tag_node->attributes.size() > 0)
-				{
-					cout << "    attributes:" << endl;
-					for(int i = 0; i < tag_node->attributes.size(); i++)
-					{
-						cout << "        attribute:" << endl;
-						cout << "            name: " << tag_node->attributes[i]->name << endl;
-						cout << "            value: " << tag_node->attributes[i]->value << endl;
-						delete tag_node->attributes[i];
-					}
-				}
-				delete tag_node;
+				tags.push_back(tag_node);
 			}
 			else
 			{
 				delete tag_node;
-				return 1;
+				tag = 1;
+				break;
 			}
 		}
 		else if(source[i] == '\'')
@@ -344,12 +330,48 @@ int parse(string source)
 		}
 	}
 	
-	if(text.size() > 0)
+	int tags_size = tags.size();
+	int text_size = text.size();
+	
+	if(tags.size() > 0)
 	{
-		cout << "text:" << endl;
-		for(int i = 0; i < text.size(); i++)
-			cout << text[i] << endl;
+		for(int i = 0; i < tags.size(); i++)
+		{
+			cout << "tag: " << setw(20) << left << tags[i]->name << " ";
+			cout << setw(10) << left;
+			if(tags[i]->type == TAG_OPEN)
+				cout << "OPEN" << endl;
+			else if(tags[i]->type == TAG_CLOSE)
+				cout << "CLOSE" << endl;
+			else if(tags[i]->type == TAG_SINGLE)
+				cout << "SINGLE" << endl;
+			else if(tags[i]->type == TAG_PROLOG)
+				cout << "PROLOG" << endl;
+			
+			if(tags[i]->attributes.size() > 0)
+			{
+				//cout << "    attributes:" << endl;
+				for(int j = 0; j < tags[i]->attributes.size(); j++)
+				{
+					//cout << "        attribute:" << endl;
+					//cout << "            name: " << tags[i]->attributes[j]->name << endl;
+					//cout << "            value: " << tags[i]->attributes[j]->value << endl;
+					delete tags[i]->attributes[j];
+				}
+			}
+			delete tags[i];
+		}
 	}
+	
+	//if(text.size() > 0)
+	//{
+	//	cout << "text:" << endl;
+	//	for(int i = 0; i < text.size(); i++)
+	//		cout << text[i] << endl;
+	//}
+	
+	cout << "found " << tags_size << " tags" << endl;
+	cout << "found " << text_size << " text contents" << endl;
 	
 	//cout << "tag: " << tag << endl;
 	//cout << "open: " << open << endl;

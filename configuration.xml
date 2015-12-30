@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
 <root>
+	barf
 	<background>
 		<red>0</red>
 		<green>134</green>
 		<blue>179</blue>
+		tarf
 	</background>
+	shplarf
 	<matter state="solid" mass="5"/>
+	gnarf
 </root>
