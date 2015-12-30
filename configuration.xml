@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
 <root state="solid" size="400" rank="B">
-	<light status="green"></light>
+	<light status="green"/>
 	<plane dimensions="2">
 		<x units="kg"></x>
 		<y units="m"></y>

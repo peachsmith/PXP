@@ -342,10 +342,23 @@ int parse(string source)
 	root->closing_tag = 0;
 	if(tags.size() > 0)
 	{
-		//cout << "==========" << endl << "tag report" << endl << "==========" << endl;
-		//cout << "found " << tags_size << " tags" << endl;
-		//cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
-		//cout << "------------------------------" << endl;
+		cout << "==========" << endl << "tag report" << endl << "==========" << endl;
+		cout << "found " << tags_size << " tags" << endl;
+		cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
+		cout << "------------------------------" << endl;
+		for(int i = 0; i < tags.size(); i++)
+		{
+			cout << setw(20) << left << tags[i]->name;
+			cout << setw(10) << left;
+			if(tags[i]->type == TAG_OPEN)
+				cout << "OPEN" << endl;
+			else if(tags[i]->type == TAG_CLOSE)
+				cout << "CLOSE" << endl;
+			else if(tags[i]->type == TAG_SINGLE)
+				cout << "SINGLE" << endl;
+			else if(tags[i]->type == TAG_PROLOG)
+				cout << "PROLOG" << endl;
+		}
 		
 		int index = 0;
 		int element_parse = parseElements(root, tags, index);
@@ -362,22 +375,7 @@ int parse(string source)
 		}
 		
 		destroyElements(root);
-		
-		for(int i = 0; i < tags.size(); i++)
-		{
-			/*
-			cout << setw(20) << left << tags[i]->name;
-			cout << setw(10) << left;
-			if(tags[i]->type == TAG_OPEN)
-				cout << "OPEN" << endl;
-			else if(tags[i]->type == TAG_CLOSE)
-				cout << "CLOSE" << endl;
-			else if(tags[i]->type == TAG_SINGLE)
-				cout << "SINGLE" << endl;
-			else if(tags[i]->type == TAG_PROLOG)
-				cout << "PROLOG" << endl;
-			*/
-		}
+
 	}
 	
 	cout << endl;
@@ -485,7 +483,9 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 					int child_parse = parseElements(child, tags, index);
 					
 					if(child_parse)
+					{
 						root->children.push_back(child);
+					}
 					else
 					{
 						destroyElements(child);
@@ -518,6 +518,15 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 				root->closing_tag = tags[index++];
 				return 1;
 			}
+		}
+		else if(tags[index]->type == TAG_SINGLE)
+		{
+			elem_t* child = new elem_t;
+			child->opening_tag = tags[index];
+			child->closing_tag = tags[index];
+			root->children.push_back(child);
+			index++;
+			continue;
 		}
 		index++;
 	}
