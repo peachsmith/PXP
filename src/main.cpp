@@ -67,16 +67,16 @@ int main()
 		{
 			if(!parse(parsable.str()))
 			{
-				cout << "\n----------\nSUCCESS\n----------" << endl;
+				cout << "=======" << endl << "SUCCESS" << endl << "=======" << endl;
 			}
 			else
 			{
-				cout << "\n----------\nERROR\n----------" << endl;
+				cout << "=====" << endl << "ERROR" << endl << "=====" << endl;
 			}
 		}
 		else
 		{
-			cout << "\n----------\nerror: " << error_code << "\n----------" << endl;
+			cout << "\n==========\nerror: " << error_code << "\n==========" << endl;
 		}
 		
 	}
@@ -335,11 +335,13 @@ int parse(string source)
 	
 	if(tags.size() > 0)
 	{
-		cout << "----------" << endl << "tag report" << endl << "----------" << endl;
+		cout << "==========" << endl << "tag report" << endl << "==========" << endl;
 		cout << "found " << tags_size << " tags" << endl;
+		cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
+		cout << "------------------------------" << endl;
 		for(int i = 0; i < tags.size(); i++)
 		{
-			cout << "tag: " << setw(20) << left << tags[i]->name << " ";
+			cout << setw(20) << left << tags[i]->name;
 			cout << setw(10) << left;
 			if(tags[i]->type == TAG_OPEN)
 				cout << "OPEN" << endl;
@@ -365,7 +367,7 @@ int parse(string source)
 		}
 	}
 	
-	cout << "-----------" << endl << "text report" << endl << "-----------" << endl;
+	cout << "===========" << endl << "text report" << endl << "===========" << endl;
 	cout << "found " << text_size << " text nodes" << endl;
 	//if(text.size() > 0)
 	//{
