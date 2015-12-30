@@ -221,12 +221,12 @@ int validate(string source, stringstream& parsable)
 			parsable << source[i];
 	}
 	
-	cout << "tag: " << tag << endl;
-	cout << "open: " << open << endl;
-	cout << "quotes: " << quotes << endl;
-	cout << "comment: " << comment << endl;
-	cout << "prolog: " << prolog << endl;
-	cout << "whitespace: " << whitespace << endl;
+	//cout << "tag: " << tag << endl;
+	//cout << "open: " << open << endl;
+	//cout << "quotes: " << quotes << endl;
+	//cout << "comment: " << comment << endl;
+	//cout << "prolog: " << prolog << endl;
+	//cout << "whitespace: " << whitespace << endl;
 	
 	if(tag)
 		return ERR_TAG;
@@ -335,6 +335,8 @@ int parse(string source)
 	
 	if(tags.size() > 0)
 	{
+		cout << "----------" << endl << "tag report" << endl << "----------" << endl;
+		cout << "found " << tags_size << " tags" << endl;
 		for(int i = 0; i < tags.size(); i++)
 		{
 			cout << "tag: " << setw(20) << left << tags[i]->name << " ";
@@ -363,6 +365,8 @@ int parse(string source)
 		}
 	}
 	
+	cout << "-----------" << endl << "text report" << endl << "-----------" << endl;
+	cout << "found " << text_size << " text nodes" << endl;
 	//if(text.size() > 0)
 	//{
 	//	cout << "text:" << endl;
@@ -370,8 +374,6 @@ int parse(string source)
 	//		cout << text[i] << endl;
 	//}
 	
-	cout << "found " << tags_size << " tags" << endl;
-	cout << "found " << text_size << " text contents" << endl;
 	
 	//cout << "tag: " << tag << endl;
 	//cout << "open: " << open << endl;
