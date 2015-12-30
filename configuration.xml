@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
-<root>
-	<background>
-		<red>0</red>
-		<green>134</green>
-		<blue>179</blue>
-	</background>
-	<matter state="solid" mass="5"/>
+<root state="solid" size="400" rank="B">
+	<light status="green"></light>
+	<plane dimensions="2">
+		<x units="kg"></x>
+		<y units="m"></y>
+		<z units="s"></z>
+	</plane>
 </root>
