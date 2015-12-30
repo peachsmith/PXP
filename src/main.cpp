@@ -432,9 +432,8 @@ void printElements(elem_t* root, int indent)
 		for(int i = 0; i < attr_size; i++)
 		{
 			cout << root->opening_tag->attributes[i]->name;
-			cout << " = \"";
+			cout << " = ";
 			cout << root->opening_tag->attributes[i]->value;
-			cout << "\"";
 			if(i < attr_size - 1)
 				cout << ", ";
 		}
