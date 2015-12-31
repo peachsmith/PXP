@@ -558,12 +558,34 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 		}
 		else if(tags[index]->type == TAG_SINGLE)
 		{
-			elem_t* child = new elem_t;
-			child->opening_tag = tags[index];
-			child->closing_tag = tags[index];
-			root->children.push_back(child);
-			index++;
-			continue;
+			if(!root->opening_tag && !root->closing_tag)
+			{
+				root->opening_tag = tags[index];
+				root->closing_tag = tags[index];
+				index++;
+				return 1;
+			}
+			else
+			{
+				while(index < tags.size() && tags[index]->name != root->opening_tag->name && tags[index]->type != TAG_CLOSE)
+				{
+					elem_t* child = new elem_t;
+					child->opening_tag = 0;
+					child->closing_tag = 0;
+					int child_parse = parseElements(child, tags, index);
+					
+					if(child_parse)
+					{
+						root->children.push_back(child);
+					}
+					else
+					{
+						destroyElements(child);
+						return 0;
+					}
+				}
+				continue;
+			}
 		}
 		index++;
 	}

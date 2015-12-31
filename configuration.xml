@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
-<root state="solid" size="400" rank="B">
+<root>
 	<light status="green"/>
-	<light status="green"/>
-	<plane dimensions="2">
+	<plane dimensions="3">
 		<x units="kg">1</x>
 		<y units="m">5</y>
 		<z units="s">2</z>
 	</plane>
-	<!--
-	TODO allow for single-tag elements anywhere
-	<light status="green"/>
-	-->
+	<item/>
 </root>
