@@ -81,16 +81,21 @@ int main()
 		{
 			if(!parse(parsable.str()))
 			{
-				cout << "=======" << endl << "SUCCESS" << endl << "=======" << endl;
+				cout << "=======" << endl 
+					<< "SUCCESS" << endl 
+					<< "=======" << endl;
 			}
 			else
 			{
-				cout << "=====" << endl << "ERROR" << endl << "=====" << endl;
+				cout << "=====" << endl 
+					<< "ERROR" << endl 
+					<< "=====" << endl;
 			}
 		}
 		else
 		{
-			cout << "\n==========\nerror: " << error_code << "\n==========" << endl;
+			cout << "\n==========\nerror: " << error_code 
+				<< "\n==========" << endl;
 		}
 		
 	}
