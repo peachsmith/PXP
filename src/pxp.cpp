@@ -6,9 +6,13 @@ namespace peach
 int isWhitespace(char c)
 {
 	if(c == ' ' || c == '\t' || c == '\n')
+	{
 		return 1;
+	}
 	else
+	{
 		return 0;
+	}
 }
 
 int allWhitespace(std::string str)
@@ -16,7 +20,9 @@ int allWhitespace(std::string str)
 	for(int i = 0; i < str.length(); i++)
 	{
 		if(!peach::isWhitespace(str[i]))
+		{
 			return 0;
+		}
 	}
 	return 1;
 }
@@ -32,9 +38,12 @@ int validate(std::string source, std::stringstream& parsable)
 	size_t len = source.length();
 		
 	std::stringstream tag_builder;
+
 	if(len < 4)
+	{
 		return -1;
-	
+	}
+
 	tag = 0;
 	open = 0;
 	quotes = 0;
@@ -48,6 +57,7 @@ int validate(std::string source, std::stringstream& parsable)
 		{
 			if(peach::isWhitespace(source[i + 1]))
 			{
+				// whitespace error
 				whitespace++;
 				break;
 			}
@@ -56,6 +66,7 @@ int validate(std::string source, std::stringstream& parsable)
 				if(source[i + 1] == '!' && source[i + 2] == '-'
 					&& source[i + 3] == '-')
 				{
+					// found the beginning of a comment
 					comment++;
 				}
 			}
@@ -65,6 +76,7 @@ int validate(std::string source, std::stringstream& parsable)
 				{
 					if(peach::isWhitespace(source[i + 2]))
 					{
+						// whitespace error
 						whitespace++;
 						break;
 					}
@@ -72,29 +84,40 @@ int validate(std::string source, std::stringstream& parsable)
 				}
 				else if(source[i + 1] == '?')
 				{
+					// found the beginning of a prolog
 					if(peach::isWhitespace(source[i + 2]))
 					{
+						// whitespace error
 						whitespace++;
 						break;
 					}
 					if(parsable.tellp() > 0)
 					{
+						// the prolog isn't the first thing in the file
 						prolog = 3;
 						break;
 					}
 					prolog++;
 				}
 				else
+				{
 					open++;
+				}
 				tag++;
 			}
 		}
 		else if(source[i] == '>' && !quotes && !comment)
 		{
 			if(source[i - 1] == '/')
+			{
+				// found a closing tag
 				open--;
+			}
 			else if(source[i - 1] == '?')
+			{
+				// found the end of the prolog
 				prolog++;
+			}
 			tag--;
 		}
 		else if(source[i] == '>' && comment)
@@ -104,7 +127,7 @@ int validate(std::string source, std::stringstream& parsable)
 				if(source[i - 1] == '-' && source[i - 2] == '-'
 					&& source[i - 3] != '!' && source[i - 4] != '!')
 				{
-					//i++;
+					// found the end of a comment
 					comment--;
 					continue;
 				}
@@ -112,6 +135,7 @@ int validate(std::string source, std::stringstream& parsable)
 		}
 		else if(source[i] == '"')
 		{
+			// enter or exit double quotes
 			if(quotes == 2)
 			{
 				quotes -= 2;
@@ -120,13 +144,10 @@ int validate(std::string source, std::stringstream& parsable)
 			{
 				quotes += 2;
 			}
-			else if(quotes == 1)
-			{
-				// TODO stuff
-			}
 		}
 		else if(source[i] == '\'')
 		{
+			// enter or exit single quotes
 			if(quotes == 1)
 			{
 				quotes--;
@@ -135,50 +156,57 @@ int validate(std::string source, std::stringstream& parsable)
 			{
 				quotes++;
 			}
-			else if(quotes == 2)
-			{
-				// TODO stuff
-			}
 		}
+
 		if(comment)
+		{
+			// ignore comments
 			continue;
+		}
 		else
+		{
 			parsable << source[i];
+		}
 	}
 	
-	//cout << "tag: " << tag << endl;
-	//cout << "open: " << open << endl;
-	//cout << "quotes: " << quotes << endl;
-	//cout << "comment: " << comment << endl;
-	//cout << "prolog: " << prolog << endl;
-	//cout << "whitespace: " << whitespace << endl;
-	
 	if(tag)
+	{
 		return ERR_TAG;
+	}
 	else if(open)
+	{
 		return ERR_OPEN;
+	}
 	else if(quotes)
+	{
 		return ERR_QUOTES;
+	}
 	else if(prolog && prolog != 2)
+	{
 		return ERR_PROLOG;
+	}
 	else if(whitespace)
+	{
 		return ERR_WHITESPACE;
+	}
 	else
+	{
 		return 0;
+	}
 }
 
 peach::elem_t* parse(std::string source)
 {
 	int tag;
 	int open;
-	int close;
+	int close; // unnecessary
 	int quotes;
 	int comment;
 	int prolog;
 	int whitespace;
 	int error;
 	int depth;
-	int single;
+	int single; // unnecessary
 	int root_element;
 	size_t len = source.length();
 	
@@ -200,19 +228,24 @@ peach::elem_t* parse(std::string source)
 	
 	for(int i = 0; i < len; i++)
 	{
+		// stuff outside of tags is considered text content of the
+		// previous open tag
 		if(tag)
+		{
 			tag_builder << source[i];
+		}
 		else if(source[i] != '<' && open)
+		{
 			text_builder << source[i];
+		}
 		
 		if(source[i] == '<' && !quotes)
 		{
 			if(text_builder.tellp() > 0)
 			{
-				
-				// find the most recent unclosed open tag and add the text to that tag
 				int ti = tags.size() - 1;
 				
+				// find the most recent open tag that does not yet have a closing tag
 				while(ti > -1)
 				{
 					if(tags[ti]->type == TAG_OPEN && tags[ti]->depth == open - 1)
@@ -227,6 +260,7 @@ peach::elem_t* parse(std::string source)
 
 				if(tags[ti]->type == TAG_OPEN)
 				{
+					// add the text content to the tag
 					tags[ti]->text.push_back(text_builder.str());
 				}
 				else
@@ -247,6 +281,7 @@ peach::elem_t* parse(std::string source)
 			peach::tag_t* tag_node = new tag_t;
 			tag_node->type = 0;
 			tag_node->depth = open;
+
 			if(peach::parseTag(tag_builder.str(), tag_node))
 			{
 				tag_builder.str(std::string());
@@ -258,9 +293,12 @@ peach::elem_t* parse(std::string source)
 					if(tag_node->depth == 0)
 					{
 						if(!root_element)
+						{
 							root_element++;
+						}
 						else
 						{
+							// if there's another root element, destroy the tags and exit
 							std::cout << "found more than one root element" << std::endl;
 							for(int i = 0; i < tags.size(); i++)
 							{
@@ -279,11 +317,11 @@ peach::elem_t* parse(std::string source)
 				else if(tag_node->type == TAG_CLOSE)
 				{
 					open--;
-					close++;
+					close++; // unnecessary
 				}
 				else if(tag_node->type == TAG_SINGLE || tag_node->type == TAG_PROLOG)
 				{
-					single++;
+					single++; // unnecessary
 				}
 			}
 			else
@@ -295,6 +333,7 @@ peach::elem_t* parse(std::string source)
 		}
 		else if(source[i] == '\'')
 		{
+			// enter or exit single quotes
 			if(!quotes)
 			{
 				quotes++;
@@ -306,6 +345,7 @@ peach::elem_t* parse(std::string source)
 		}
 		else if(source[i] == '"')
 		{
+			// enter or exit double quotes
 			if(!quotes)
 			{
 				quotes += 2;
@@ -318,7 +358,6 @@ peach::elem_t* parse(std::string source)
 	}
 	
 	int tags_size = tags.size();
-	//int text_size = text.size();
 	
 	peach::elem_t* root = 0;
 
@@ -329,53 +368,10 @@ peach::elem_t* parse(std::string source)
 		root->closing_tag = 0;
 		root->depth = 1;
 		
-		// cout << "==========" << endl << "tag report" << endl << "==========" << endl;
-		// cout << "found " << tags_size << " tags" << endl;
-		// cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
-		// cout << "------------------------------" << endl;
-		// for(int i = 0; i < tags_size; i++)
-		// {
-		// 	cout << setw(20) << left << tags[i]->name;
-		// 	cout << setw(10) << left;
-		// 	if(tags[i]->type == TAG_OPEN)
-		// 		cout << "OPEN";
-		// 	else if(tags[i]->type == TAG_CLOSE)
-		// 		cout << "CLOSE";
-		// 	else if(tags[i]->type == TAG_SINGLE)
-		// 		cout << "SINGLE";
-		// 	else if(tags[i]->type == TAG_PROLOG)
-		// 		cout << "PROLOG";
-		// 	cout << " depth: " << tags[i]->depth << endl;
-		// }
-		
-		// cout << endl << "===============" << endl << "tag text report" << endl << "===============" << endl;
-		// for(int i = 0; i < tags_size; i++)
-		// {
-		// 	if(tags[i]->text.size() > 0)
-		// 	{
-		// 		cout << tags[i]->name << " (" << tags[i]->text.size() << " text nodes)" << endl;
-		// 		for(int j = 0; j < tags[i]->text.size(); j++)
-		// 		{
-		// 			cout << "    ";
-		// 			if(allWhitespace(tags[i]->text[j]))
-		// 				cout << "[whitespace]" << endl;
-		// 			else
-		// 				cout << tags[i]->text[j] << endl;
-		// 		}
-		// 	}
-		// }
-		
 		int index = 0;
 		int element_parse = peach::parseElements(root, tags, index);
 		
-		if(element_parse)
-		{
-			//cout << endl;
-			//cout << "==============" << endl << "element report" << endl << "==============" << endl;
-			//printElements(root, 0);
-			//destroyElements(root);
-		}
-		else
+		if(!element_parse)
 		{
 			peach::destroyElements(root);
 			error = ERR_ELEMENT;
@@ -383,9 +379,7 @@ peach::elem_t* parse(std::string source)
 
 	}
 	
-	//============================
-	// DESTROY PROLOG
-	//============================
+	// destroy the prolog here since it will not be in the resulting element tree
 	for(int i = 0; i < tags.size(); i++)
 	{
 		if(tags[i]->type == TAG_PROLOG)
@@ -399,18 +393,14 @@ peach::elem_t* parse(std::string source)
 		}
 	}
 	
-	//cout << endl;
-	//cout << "tag: " << tag << endl;
-	//cout << "open: " << open << endl;
-	//cout << "quotes: " << quotes << endl;
-	//cout << "comment: " << comment << endl;
-	//cout << "prolog: " << prolog << endl;
-	//cout << "whitespace: " << whitespace << endl;
-	
 	if(tag || open || quotes || (prolog && prolog != 2) || whitespace || error)
+	{
 		return 0;
+	}
 	else
+	{
 		return root;
+	}
 }
 
 void printElements(peach::elem_t* root, int indent)
@@ -418,8 +408,10 @@ void printElements(peach::elem_t* root, int indent)
 	std::cout << std::setw(indent) << std::setfill('.') << "";
 	std::cout << root->opening_tag->name << " ";
 	int attr_size = root->opening_tag->attributes.size();
+
 	if(attr_size > 0)
 	{
+		// print attributes
 		std::cout << "[";
 		for(int i = 0; i < attr_size; i++)
 		{
@@ -427,26 +419,36 @@ void printElements(peach::elem_t* root, int indent)
 			std::cout << " = ";
 			std::cout << root->opening_tag->attributes[i]->value;
 			if(i < attr_size - 1)
+			{
 				std::cout << ", ";
+			}
 		}
 		std::cout << "]";
 	}
+
 	std::cout << std::endl;
+
 	if(root->text.size() > 0)
 	{
-		
+		// print text content
 		for(int i = 0; i < root->text.size(); i++)
 		{
 			std::cout << std::setw(indent + 2) << std::setfill(' ') << "";
 			std::cout << "text " << i << ": ";
 			if(peach::allWhitespace(root->text[i]))
+			{
 				std::cout << "[whitespace]" << std::endl;
+			}
 			else
+			{
 				std::cout << root->text[i] << std::endl;
+			}
 		}
 	}
+
 	if(root->children.size() > 0)
 	{
+		// print child elements
 		for(int i = 0; i < root->children.size(); i++)
 		{
 			peach::printElements(root->children[i], indent + 2);
@@ -458,8 +460,11 @@ void destroyElements(peach::elem_t* root)
 {
 	if(root->attributes.size() > 0)
 	{
+		// delete the attributes
 		for(int i = 0; i < root->attributes.size(); i++)
+		{
 			delete root->attributes[i];
+		}
 	}
 
 	if(root->opening_tag->type == TAG_OPEN)
@@ -483,8 +488,11 @@ void destroyElements(peach::elem_t* root)
 	}
 	else
 	{
+		// destroy the child elements
 		for(int i = 0; i < root->children.size(); i++)
+		{
 			peach::destroyElements(root->children[i]);
+		}
 	}
 }
 
@@ -503,6 +511,7 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 			}
 			else
 			{
+				// parse child elements
 				while(index < tags.size() && tags[index]->name != root->opening_tag->name && tags[index]->type != TAG_CLOSE)
 				{
 					peach::elem_t* child = new peach::elem_t;
@@ -541,7 +550,9 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 						return 0;
 					}
 					else
+					{
 						return 1;
+					}
 				}
 				
 				root->closing_tag = tags[index++];
@@ -552,6 +563,8 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 		{
 			if(!root->opening_tag && !root->closing_tag)
 			{
+				// for single-tag elements, the opening and
+				// closing tag are the same
 				root->name = tags[index]->name;
 				root->attributes = tags[index]->attributes;
 				root->text = tags[index]->text;
@@ -562,6 +575,7 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 			}
 			else
 			{
+				// parse child elements
 				while(index < tags.size() && tags[index]->name != root->opening_tag->name && tags[index]->type != TAG_CLOSE)
 				{
 					peach::elem_t* child = new peach::elem_t;
@@ -591,7 +605,9 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 		return 1;
 	}
 	else
+	{
 		return 0;
+	}
 }
 
 int parseTag(std::string tag_string, peach::tag_t* tag)
@@ -606,8 +622,10 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 	
 	if(tag_string[1] == '/')
 	{
+		// found a closing tag
 		tag_type = TAG_CLOSE;
 		int i = 2;
+		//acquire the tag's name
 		while(tag_string[i] != ' ' && tag_string[i] != '>')
 		{
 			name_builder << tag_string[i++];
@@ -616,24 +634,40 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 	else if(tag_string[1] != '?')
 	{
 		if(tag_string[len - 2] == '/')
+		{
+			// found a single tag
 			tag_type = TAG_SINGLE;
+		}
 		else
+		{
+			// found an opening tag
 			tag_type = TAG_OPEN;
+		}
+
+		// acquire the tag's name
 		int i = 1;
 		while(tag_string[i] != ' ' && tag_string[i] != '>' && tag_string[i] != '/')
 		{
 			if(tag_string[i] == '=' || tag_string[i] == '\'' || tag_string[i] == '"')
+			{
 				return 0;
+			}
 			name_builder << tag_string[i++];
 		}
 		
+		// skip whitespace
 		while(peach::isWhitespace(tag_string[i]))
+		{
 			i++;
-		
+		}
+
 		if(tag_string[i] != '>')
 		{
 			if(tag_string[i] == '/')
+			{
 				i++;
+			}
+
 			while(tag_string[i] != '>' && tag_string[i] != '/')
 			{
 				attr_builder << tag_string[i++];
@@ -650,8 +684,10 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 		}
 		
 		while(peach::isWhitespace(tag_string[i]))
+		{
 			i++;
-		
+		}
+
 		if(tag_string[i] != '?')
 		{
 			if(tag_string[i] == '?')
@@ -700,8 +736,10 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 	size_t len = attr_string.length();
 	
 	if(len < 4)
+	{
 		return 0;
-	
+	}
+
 	while(i < len)
 	{
 		while(peach::isWhitespace(attr_string[i]) && i < len - 1)
@@ -726,8 +764,10 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 				}
 				
 				while(peach::isWhitespace(attr_string[i]) && i < len - 1)
+				{
 					i++;
-				
+				}
+
 				if(attr_string[i] == '=')
 				{
 					if(!nam)
@@ -745,8 +785,10 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 				}
 				
 				while(peach::isWhitespace(attr_string[i]) && i < len - 1)
+				{
 					i++;
-				
+				}
+
 				if(attr_string[i] == '\'')
 				{
 					i++;
@@ -813,11 +855,17 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 	}
 	
 	if(nam != equ || equ != val)
+	{
 		return 0;
+	}
 	else if(error)
+	{
 		return 0;
+	}
 	else
+	{
 		return 1;
+	}
 }
 
 }
