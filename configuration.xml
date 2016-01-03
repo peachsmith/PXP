@@ -1,22 +1,7 @@
-<!--<?xml version="1.0" encoding="UTF-8" ?>-->
+<?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
-<!--
-root
-root
-speed
-root
-plane
-x
-plane
-y
-plane
-z
-plane
-root
-root
--->
 <root>
-	<light status="green"/>
+	<traffic-light status="green"/>
 	<speed units="mph">17</speed>
 	<plane dimensions="3">
 		<x units="kg">1</x>

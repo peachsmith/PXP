@@ -21,12 +21,6 @@ const unsigned int TAG_PROLOG = 4;
 
 using namespace std;
 
-struct text_t
-{
-	string content;
-	int depth;
-};
-
 struct attr_t
 {
 	string name;
@@ -44,17 +38,19 @@ struct tag_t
 
 struct elem_t
 {
-	int depth;
-	tag_t* opening_tag;
-	tag_t* closing_tag;
+	string name;
+	vector<attr_t*> attributes;
 	vector<string> text;
 	vector<elem_t*> children;
+	tag_t* opening_tag;
+	tag_t* closing_tag;
+	int depth;
 };
 
 int isWhitespace(char c);
 int allWhitespace(string str);
 int validate(string source, stringstream& parsable);
-int parse(string parsable);
+elem_t* parse(string parsable);
 
 void printElements(elem_t* root, int indent);
 void destroyElements(elem_t* root);
@@ -79,11 +75,16 @@ int main()
 		
 		if(error_code == 0)
 		{
-			if(!parse(parsable.str()))
+			elem_t* root = parse(parsable.str());
+			if(root)
 			{
-				cout << "=======" << endl 
-					<< "SUCCESS" << endl 
-					<< "=======" << endl;
+				//cout << "success" << endl;
+				cout << "=============="
+					<< endl << "element report"
+					<< endl << "==============" << endl;
+				
+				printElements(root, 0);
+				destroyElements(root);
 			}
 			else
 			{
@@ -271,7 +272,7 @@ int validate(string source, stringstream& parsable)
 		return 0;
 }
 
-int parse(string source)
+elem_t* parse(string source)
 {
 	int tag;
 	int open;
@@ -283,6 +284,7 @@ int parse(string source)
 	int error;
 	int depth;
 	int single;
+	int root_element;
 	size_t len = source.length();
 	
 	tag = 0;
@@ -295,10 +297,10 @@ int parse(string source)
 	error = 0;
 	depth = 0;
 	single = 0;
+	root_element = 0;
 	stringstream tag_builder;
 	stringstream text_builder;
 	
-	vector<text_t*> text;
 	vector<tag_t*> tags;
 	
 	for(int i = 0; i < len; i++)
@@ -312,51 +314,29 @@ int parse(string source)
 		{
 			if(text_builder.tellp() > 0)
 			{
-				text_t* tx = new text_t;
-				tx->content = text_builder.str();
-				tx->depth = open;
-				text.push_back(tx);
 				
-				if(source[i + 1] == '/')
+				// find the most recent unclosed open tag and add the text to that tag
+				int ti = tags.size() - 1;
+				
+				while(ti > -1)
 				{
-					// closing tag
-					cout << "(close) pushing text to tag " << tags[open + single + close - 1]->name << endl;
-					//cout << "open: " << open << " single: " << single << " size: " << tags.size() << endl;
-					tags[open + single + close - 1]->text.push_back(text_builder.str());
-				}
-				else
-				{
-					if(tags[open + single + close - 1]->type == TAG_OPEN)
+					if(tags[ti]->type == TAG_OPEN && tags[ti]->depth == open - 1)
 					{
-						cout << "(open) pushing text to tag " << tags[open + single + close - 1]->name << endl;
-						tags[open + single + close - 1]->text.push_back(text_builder.str());
+						break;
 					}
 					else
 					{
-						int text_index = open + single + close - 1;
-						while(text_index > -1 && tags[text_index]->type != TAG_OPEN)
-						{
-							text_index--;
-							if(tags[text_index]->type == TAG_CLOSE)
-							{
-								int ti = text_index;
-								while(text_index > -1 && tags[text_index]->type != TAG_OPEN 
-									&& tags[text_index]->name != tags[ti]->name && tags[text_index]->depth != tags[ti]->depth)
-								{
-									text_index--;
-								}
-							}
-						}
-						if(tags[text_index]->type != TAG_OPEN)
-						{
-							cout << "(open) pushing text to tag " << tags[text_index]->name << endl;
-							tags[text_index]->text.push_back(text_builder.str());
-						}
-						else
-						{
-							cout << "coun't find opening tag to accept the text content" << endl;
-						}
+						ti--;
 					}
+				}
+
+				if(tags[ti]->type == TAG_OPEN)
+				{
+					tags[ti]->text.push_back(text_builder.str());
+				}
+				else
+				{
+					cout << "could not find an open tag for the text data" << endl;
 				}
 				
 				text_builder.str(string());
@@ -380,6 +360,25 @@ int parse(string source)
 				
 				if(tag_node->type == TAG_OPEN)
 				{
+					if(tag_node->depth == 0)
+					{
+						if(!root_element)
+							root_element++;
+						else
+						{
+							cout << "found more than one root element" << endl;
+							for(int i = 0; i < tags.size(); i++)
+							{
+								if(tags[i]->attributes.size() > 0)
+								{
+									for(int j = 0; j < tags[i]->attributes.size(); j++)
+										delete tags[i]->attributes[j];
+								}
+								delete tags[i];
+							}
+							return 0;
+						}
+					}
 					open++;
 				}
 				else if(tag_node->type == TAG_CLOSE)
@@ -424,58 +423,62 @@ int parse(string source)
 	}
 	
 	int tags_size = tags.size();
-	int text_size = text.size();
+	//int text_size = text.size();
 	
-	elem_t* root = new elem_t;
-	root->opening_tag = 0;
-	root->closing_tag = 0;
-	root->depth = 1;
+	elem_t* root = 0;
+
 	if(tags_size > 0)
 	{
-		/*
-		cout << "==========" << endl << "tag report" << endl << "==========" << endl;
-		cout << "found " << tags_size << " tags" << endl;
-		cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
-		cout << "------------------------------" << endl;
-		for(int i = 0; i < tags_size; i++)
-		{
-			cout << setw(20) << left << tags[i]->name;
-			cout << setw(10) << left;
-			if(tags[i]->type == TAG_OPEN)
-				cout << "OPEN" << endl;
-			else if(tags[i]->type == TAG_CLOSE)
-				cout << "CLOSE" << endl;
-			else if(tags[i]->type == TAG_SINGLE)
-				cout << "SINGLE" << endl;
-			else if(tags[i]->type == TAG_PROLOG)
-				cout << "PROLOG" << endl;
-		}
-		*/
-		cout << endl << "===============" << endl << "tag text report" << endl << "===============" << endl;
-		for(int i = 0; i < tags_size; i++)
-		{
-			//if(tags[i]->type == TAG_OPEN || tags[i]->type == TAG_SINGLE || tags[i]->type == TAG_PROLOG)
-			//{
-				cout << tags[i]->name << " (" << tags[i]->text.size() << " text nodes)" << endl;
-				for(int j = 0; j < tags[i]->text.size(); j++)
-				{
-					cout << "    ";
-					if(allWhitespace(tags[i]->text[j]))
-						cout << "[whitespace]" << endl;
-					else
-						cout << tags[i]->text[j] << endl;
-				}
-			//}
-		}
+		root = new elem_t;
+		root->opening_tag = 0;
+		root->closing_tag = 0;
+		root->depth = 1;
+		
+		// cout << "==========" << endl << "tag report" << endl << "==========" << endl;
+		// cout << "found " << tags_size << " tags" << endl;
+		// cout << setw(20) << left << "name" << setw(10) << left << "type" << endl;
+		// cout << "------------------------------" << endl;
+		// for(int i = 0; i < tags_size; i++)
+		// {
+		// 	cout << setw(20) << left << tags[i]->name;
+		// 	cout << setw(10) << left;
+		// 	if(tags[i]->type == TAG_OPEN)
+		// 		cout << "OPEN";
+		// 	else if(tags[i]->type == TAG_CLOSE)
+		// 		cout << "CLOSE";
+		// 	else if(tags[i]->type == TAG_SINGLE)
+		// 		cout << "SINGLE";
+		// 	else if(tags[i]->type == TAG_PROLOG)
+		// 		cout << "PROLOG";
+		// 	cout << " depth: " << tags[i]->depth << endl;
+		// }
+		
+		// cout << endl << "===============" << endl << "tag text report" << endl << "===============" << endl;
+		// for(int i = 0; i < tags_size; i++)
+		// {
+		// 	if(tags[i]->text.size() > 0)
+		// 	{
+		// 		cout << tags[i]->name << " (" << tags[i]->text.size() << " text nodes)" << endl;
+		// 		for(int j = 0; j < tags[i]->text.size(); j++)
+		// 		{
+		// 			cout << "    ";
+		// 			if(allWhitespace(tags[i]->text[j]))
+		// 				cout << "[whitespace]" << endl;
+		// 			else
+		// 				cout << tags[i]->text[j] << endl;
+		// 		}
+		// 	}
+		// }
 		
 		int index = 0;
 		int element_parse = parseElements(root, tags, index);
 		
 		if(element_parse)
 		{
-			cout << endl;
-			cout << "==============" << endl << "element report" << endl << "==============" << endl;
-			printElements(root, 0);
+			//cout << endl;
+			//cout << "==============" << endl << "element report" << endl << "==============" << endl;
+			//printElements(root, 0);
+			//destroyElements(root);
 		}
 		else
 		{
@@ -484,46 +487,23 @@ int parse(string source)
 
 	}
 	
-	cout << endl;
-	/*
-	cout << "===========" << endl << "text report" << endl << "===========" << endl;
-	cout << "found " << text_size << " text nodes" << endl;
-	cout << setw(10) << left << setfill(' ') << "depth" << setw(50) << left << "content" << endl;
-	cout << "------------------------------" << endl;
-	for(int i = 0; i < text_size; i++)
-	{
-		
-		if(allWhitespace(text[i]->content))
-			cout << setw(10) << left << text[i]->depth << setw(50) << left << "[whitespace]"  << endl;
-		else
-			cout << setw(10) << left << text[i]->depth << setw(50) << left << text[i]->content << endl;
-	}
-	*/
 	//============================
-	// DESTROY TEXT
-	//============================
-	for(int i = 0; i < text_size; i++)
-		delete text[i];
-	
-	//============================
-	// DESTROY TAGS
+	// DESTROY PROLOG
 	//============================
 	for(int i = 0; i < tags.size(); i++)
 	{
-		if(tags[i]->attributes.size() > 0)
+		if(tags[i]->type == TAG_PROLOG)
 		{
-			for(int j = 0; j < tags[i]->attributes.size(); j++)
-				delete tags[i]->attributes[j];
+			if(tags[i]->attributes.size() > 0)
+			{
+				for(int j = 0; j < tags[i]->attributes.size(); j++)
+					delete tags[i]->attributes[j];
+			}
+			delete tags[i];	
 		}
-		delete tags[i];
 	}
 	
-	//============================
-	// DESTROY ELEMENTS
-	//============================
-	destroyElements(root);
-	
-	cout << endl;
+	//cout << endl;
 	//cout << "tag: " << tag << endl;
 	//cout << "open: " << open << endl;
 	//cout << "quotes: " << quotes << endl;
@@ -531,20 +511,10 @@ int parse(string source)
 	//cout << "prolog: " << prolog << endl;
 	//cout << "whitespace: " << whitespace << endl;
 	
-	if(tag)
-		return ERR_TAG;
-	else if(open)
-		return ERR_OPEN;
-	else if(quotes)
-		return ERR_QUOTES;
-	else if(prolog && prolog != 2)
-		return ERR_PROLOG;
-	else if(whitespace)
-		return ERR_WHITESPACE;
-	else if(error)
-		return error;
-	else
+	if(tag || open || quotes || (prolog && prolog != 2) || whitespace || error)
 		return 0;
+	else
+		return root;
 }
 
 void printElements(elem_t* root, int indent)
@@ -566,6 +536,19 @@ void printElements(elem_t* root, int indent)
 		cout << "]";
 	}
 	cout << endl;
+	if(root->text.size() > 0)
+	{
+		
+		for(int i = 0; i < root->text.size(); i++)
+		{
+			cout << setw(indent + 2) << setfill(' ') << "";
+			cout << "text " << i << ": ";
+			if(allWhitespace(root->text[i]))
+				cout << "[whitespace]" << endl;
+			else
+				cout << root->text[i] << endl;
+		}
+	}
 	if(root->children.size() > 0)
 	{
 		for(int i = 0; i < root->children.size(); i++)
@@ -577,6 +560,27 @@ void printElements(elem_t* root, int indent)
 
 void destroyElements(elem_t* root)
 {
+	if(root->attributes.size() > 0)
+	{
+		for(int i = 0; i < root->attributes.size(); i++)
+			delete root->attributes[i];
+	}
+
+	if(root->opening_tag->type == TAG_OPEN)
+	{
+		// delete opening and closing tags if the opening
+		// tag is actually an opening tag
+		delete root->opening_tag;
+		delete root->closing_tag;
+	}
+	else if(root->opening_tag->type == TAG_SINGLE)
+	{
+		// only delete the opening tag if it's a 
+		// single tage, since opening and closing tags
+		// point to the same memory location
+		delete root->opening_tag;
+	}
+
 	if(root->children.size() == 0)
 	{
 		delete root;
@@ -596,6 +600,9 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 		{
 			if(!root->opening_tag)
 			{
+				root->name = tags[index]->name;
+				root->attributes = tags[index]->attributes;
+				root->text = tags[index]->text;
 				root->opening_tag = tags[index];
 			}
 			else
@@ -649,6 +656,9 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 		{
 			if(!root->opening_tag && !root->closing_tag)
 			{
+				root->name = tags[index]->name;
+				root->attributes = tags[index]->attributes;
+				root->text = tags[index]->text;
 				root->opening_tag = tags[index];
 				root->closing_tag = tags[index];
 				index++;
@@ -681,7 +691,9 @@ int parseElements(elem_t* root, vector<tag_t*>& tags, int& index)
 	}
 	
 	if(root->opening_tag && root->closing_tag && root->opening_tag->name == root->closing_tag->name)
+	{
 		return 1;
+	}
 	else
 		return 0;
 }
