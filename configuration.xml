@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- generic configuration file -->
-<root>
+<configuration>
 	<traffic-light status="green"/>
 	<speed units="mph">17</speed>
 	<plane dimensions="3">
@@ -9,4 +9,4 @@
 		<z units="s">2</z>
 	</plane>
 	<item/>
-</root>
+</configuration>

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "pxp.h"
 
 using namespace std;
@@ -24,22 +26,15 @@ int main()
 			{
 				peach::printElements(root, 0);
 				peach::destroyElements(root);
-				cout << "======="
-					<< endl << "success"
-					<< endl << "=======" << endl;
 			}
 			else
 			{
-				cout << "=============" << endl 
-					<< "parsing error" << endl 
-					<< "=============" << endl;
+				cout << "parsing error" << endl;
 			}
 		}
 		else
 		{
-			cout << "=====================" << endl 
-				<< "validation error: " << error_code 
-				<< endl << "=====================" << endl;
+			cout << "validation error: " << error_code << endl;
 		}
 		
 	}
