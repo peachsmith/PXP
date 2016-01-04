@@ -403,6 +403,28 @@ peach::elem_t* parse(std::string source)
 	}
 }
 
+std::vector<peach::elem_t*> getElementsByName(peach::elem_t* root, std::string name)
+{
+	std::vector<peach::elem_t*> elements;
+	for(int i = 0; i < root->children.size(); i++)
+	{
+		if(root->children[i]->name == name)
+			elements.push_back(root->children[i]);
+	}
+	return elements;
+}
+
+std::vector<peach::attr_t*> getAttributesByName(peach::elem_t* root, std::string name)
+{
+	std::vector<peach::attr_t*> attributes;
+	for(int i = 0; i < root->attributes.size(); i++)
+	{
+		if(root->attributes[i]->name == name)
+			attributes.push_back(root->attributes[i]);
+	}
+	return attributes;
+}
+
 void printElements(peach::elem_t* root, int indent)
 {
 	std::cout << std::setw(indent) << std::setfill('.') << "";

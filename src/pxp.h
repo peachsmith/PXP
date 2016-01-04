@@ -55,6 +55,8 @@ int isWhitespace(char c);
 int allWhitespace(std::string str);
 int validate(std::string source, std::stringstream& parsable);
 peach::elem_t* parse(std::string parsable);
+std::vector<peach::elem_t*> getElementsByName(peach::elem_t* root, std::string name);
+std::vector<peach::attr_t*> getAttributesByName(peach::elem_t* root, std::string name);
 
 void printElements(peach::elem_t* root, int indent);
 void destroyElements(peach::elem_t* root);
