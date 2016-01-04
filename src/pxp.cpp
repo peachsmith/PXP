@@ -199,27 +199,23 @@ peach::elem_t* parse(std::string source)
 {
 	int tag;
 	int open;
-	int close; // unnecessary
 	int quotes;
 	int comment;
 	int prolog;
 	int whitespace;
 	int error;
 	int depth;
-	int single; // unnecessary
 	int root_element;
 	size_t len = source.length();
 	
 	tag = 0;
 	open = 0;
-	close = 0;
 	quotes = 0;
 	comment = 0;
 	prolog = 0;
 	whitespace = 0;
 	error = 0;
 	depth = 0;
-	single = 0;
 	root_element = 0;
 	std::stringstream tag_builder;
 	std::stringstream text_builder;
@@ -317,11 +313,6 @@ peach::elem_t* parse(std::string source)
 				else if(tag_node->type == TAG_CLOSE)
 				{
 					open--;
-					close++; // unnecessary
-				}
-				else if(tag_node->type == TAG_SINGLE || tag_node->type == TAG_PROLOG)
-				{
-					single++; // unnecessary
 				}
 			}
 			else
@@ -361,12 +352,26 @@ peach::elem_t* parse(std::string source)
 	
 	peach::elem_t* root = 0;
 
+	// destroy the prolog here since it will not be in the resulting element tree
+	// destroy all tags if there was a tag error
+	for(int i = 0; i < tags.size(); i++)
+	{
+		if(tags[i]->type == TAG_PROLOG || tag)
+		{
+			if(tags[i]->attributes.size() > 0)
+			{
+				for(int j = 0; j < tags[i]->attributes.size(); j++)
+					delete tags[i]->attributes[j];
+			}
+			delete tags[i];	
+		}
+	}
+
 	if(tags_size > 0)
 	{
 		root = new peach::elem_t;
 		root->opening_tag = 0;
 		root->closing_tag = 0;
-		root->depth = 1;
 		
 		int index = 0;
 		int element_parse = peach::parseElements(root, tags, index);
@@ -377,20 +382,6 @@ peach::elem_t* parse(std::string source)
 			error = ERR_ELEMENT;
 		}
 
-	}
-	
-	// destroy the prolog here since it will not be in the resulting element tree
-	for(int i = 0; i < tags.size(); i++)
-	{
-		if(tags[i]->type == TAG_PROLOG)
-		{
-			if(tags[i]->attributes.size() > 0)
-			{
-				for(int j = 0; j < tags[i]->attributes.size(); j++)
-					delete tags[i]->attributes[j];
-			}
-			delete tags[i];	
-		}
 	}
 	
 	if(tag || open || quotes || (prolog && prolog != 2) || whitespace || error)
@@ -539,7 +530,7 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 					peach::elem_t* child = new peach::elem_t;
 					child->opening_tag = 0;
 					child->closing_tag = 0;
-					child->depth = root->depth + 1;
+					
 					int child_parse = peach::parseElements(child, tags, index);
 					
 					if(child_parse)
@@ -603,7 +594,7 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 					peach::elem_t* child = new peach::elem_t;
 					child->opening_tag = 0;
 					child->closing_tag = 0;
-					child->depth = root->depth + 1;
+					
 					int child_parse = peach::parseElements(child, tags, index);
 					
 					if(child_parse)
@@ -705,6 +696,7 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 			name_builder << tag_string[i++];
 		}
 		
+		// skip whitespace
 		while(peach::isWhitespace(tag_string[i]))
 		{
 			i++;
@@ -806,6 +798,8 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 					break;
 				}
 				
+				// skip whitespace
+				// I don't remember why I have the (i < len - 1) condition
 				while(peach::isWhitespace(attr_string[i]) && i < len - 1)
 				{
 					i++;

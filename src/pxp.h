@@ -1,5 +1,5 @@
-#ifndef PEACH_XML_PARSER_H
-#define PEACH_XML_PARSER_H
+#ifndef PXP_H_
+#define PXP_H_
 
 #define ERR_LENGTH -1
 #define ERR_TAG -2
@@ -48,7 +48,6 @@ struct elem_t
 	std::vector<peach::elem_t*> children;
 	tag_t* opening_tag;
 	tag_t* closing_tag;
-	int depth;
 };
 
 int isWhitespace(char c);
