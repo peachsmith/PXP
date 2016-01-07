@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include "pxp.h"
 
 using namespace std;
