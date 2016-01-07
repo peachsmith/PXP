@@ -1,34 +1,32 @@
 #include "pxp.h"
 
 using namespace std;
-
+using peach::attr_t;
+using peach::tag_t;
+using peach::elem_t;
+	
 int main()
 {	
-	ifstream config;
+	ifstream in_file;
+	stringstream parse_stream;
+	stringstream source_stream;
+	string source;
+	int parse_error;
+	vector<elem_t*> speed;
+	vector<attr_t*> units;
 	
-	config.open("configuration.xml");
+	in_file.open("configuration.xml");
 
-	if(config.is_open())
+	if(in_file.is_open())
 	{	
-		using peach::attr_t;
-		using peach::tag_t;
-		using peach::elem_t;
-
-		stringstream parsable;
-		stringstream source_stream;
-		string source;
-		int parse_error;
-		vector<elem_t*> speed;
-		vector<attr_t*> units;
-
-		source_stream << config.rdbuf();
+		source_stream << in_file.rdbuf();
 		source = source_stream.str();
 		
-		parse_error = peach::validate(source, parsable);
+		parse_error = peach::validate(source, parse_stream);
 		
 		if(parse_error == 0)
 		{
-			peach::elem_t* root = peach::parse(parsable.str());
+			peach::elem_t* root = peach::parse(parse_stream.str());
 			if(root)
 			{
 				speed = peach::getElementsByName(root, "speed");
@@ -61,6 +59,7 @@ int main()
 			cout << "validation error: " << parse_error << endl;
 		}
 		
+		in_file.close();
 	}
 	else
 	{
