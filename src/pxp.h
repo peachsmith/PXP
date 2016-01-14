@@ -1,6 +1,7 @@
 #ifndef PXP_H_
 #define PXP_H_
 
+/* error codes */
 #define ERR_LENGTH -1
 #define ERR_TAG -2
 #define ERR_OPEN -3
@@ -11,6 +12,7 @@
 #define ERR_ATTRIBUTES -8
 #define ERR_ELEMENT -9
 
+/* tag types */
 #define TAG_OPEN 1
 #define TAG_CLOSE 2
 #define TAG_SINGLE 3
@@ -63,6 +65,6 @@ int parseElements(peach::elem_t* root, std::vector<peach::tag_t*>& tags, int& in
 int parseTag(std::string tag_string, peach::tag_t* tag);
 int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attributes);
 
-}
+} /* namespace peach */
 
 #endif
