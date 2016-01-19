@@ -1,2 +1,2 @@
 all:
-	g++ src/main.cpp src/pxp.cpp -o pxp
+	g++ src/main.cpp src/pxp.cpp -o pxp-demo

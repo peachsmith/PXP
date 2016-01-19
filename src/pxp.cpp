@@ -1,3 +1,22 @@
+/*  
+    pxp.cpp
+	Peach XML Parser (PXP)
+    Copyright (C) 2016 John E. Powell
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 #include "pxp.h"
 
 namespace peach
@@ -195,8 +214,13 @@ int validate(std::string source, std::stringstream& parsable)
 	}
 }
 
-peach::elem_t* parse(std::string source)
+peach::elem_t* parse(std::string input)
 {
+
+	int validation_error;
+	std::stringstream parsable;
+	std::string source;
+
 	int tag;
 	int open;
 	int quotes;
@@ -206,8 +230,20 @@ peach::elem_t* parse(std::string source)
 	int error;
 	int depth;
 	int root_element;
-	size_t len = source.length();
+	size_t len;
+
+	std::stringstream tag_builder;
+	std::stringstream text_builder;
+	std::vector<tag_t*> tags;
 	
+	validation_error = validate(input, parsable);
+
+	if(validation_error)
+	{
+		return 0;
+	}
+
+	source = parsable.str();
 	tag = 0;
 	open = 0;
 	quotes = 0;
@@ -217,10 +253,7 @@ peach::elem_t* parse(std::string source)
 	error = 0;
 	depth = 0;
 	root_element = 0;
-	std::stringstream tag_builder;
-	std::stringstream text_builder;
-	
-	std::vector<tag_t*> tags;
+	len = source.length();
 	
 	for(int i = 0; i < len; i++)
 	{

@@ -1,19 +1,35 @@
+/*  
+    main.cpp
+    a PXP dmeo application
+    Copyright (C) 2016 John E. Powell
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along
+    with this program; if not, write to the Free Software Foundation, Inc.,
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+*/
 #include "pxp.h"
 
-using namespace std;
-using peach::attr_t;
-using peach::tag_t;
-using peach::elem_t;
+using std::cout;
+using std::endl;
 	
 int main()
 {	
-	ifstream in_file;
-	stringstream parse_stream;
-	stringstream source_stream;
-	string source;
-	int parse_error;
-	vector<elem_t*> speed;
-	vector<attr_t*> units;
+	std::ifstream in_file;
+	std::stringstream source_stream;
+	std::string source;
+	peach::elem_t* root;
+	std::vector<peach::elem_t*> speed;
+	std::vector<peach::attr_t*> units;
 	
 	in_file.open("configuration.xml");
 
@@ -22,41 +38,33 @@ int main()
 		source_stream << in_file.rdbuf();
 		source = source_stream.str();
 		
-		parse_error = peach::validate(source, parse_stream);
-		
-		if(parse_error == 0)
+		root = peach::parse(source);
+
+		if(root)
 		{
-			peach::elem_t* root = peach::parse(parse_stream.str());
-			if(root)
-			{
-				speed = peach::getElementsByName(root, "speed");
+			speed = peach::getElementsByName(root, "speed");
 
-				if(speed.size() > 0)
+			if(speed.size() > 0)
+			{
+				cout << "name: " << speed[0]->name << endl;
+
+				units = peach::getAttributesByName(speed[0], "units");
+
+				if(units.size() > 0)
 				{
-					cout << "name: " << speed[0]->name << endl;
-
-					units = peach::getAttributesByName(speed[0], "units");
-
-					if(units.size() > 0)
-					{
-						cout << "units: " << units[0]->value << endl;
-					}
-					if(speed[0]->text.size() > 0)
-					{
-						cout << "text: " << speed[0]->text[0] << endl;
-					}
+					cout << "units: " << units[0]->value << endl;
 				}
-				
-				peach::destroyElements(root);
+				if(speed[0]->text.size() > 0)
+				{
+					cout << "text: " << speed[0]->text[0] << endl;
+				}
 			}
-			else
-			{
-				cout << "parsing error" << endl;
-			}
+			
+			peach::destroyElements(root);
 		}
 		else
 		{
-			cout << "validation error: " << parse_error << endl;
+			cout << "could not parse file" << endl;
 		}
 		
 		in_file.close();
