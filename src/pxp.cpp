@@ -665,6 +665,9 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 	size_t len = tag_string.length();
 	std::vector<peach::attr_t*> attributes;
 	std::string attr_string;
+	int quotes;
+	
+	quotes = 0;
 	
 	if(tag_string[1] == '/')
 	{
@@ -714,10 +717,40 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 				i++;
 			}
 
-			while(tag_string[i] != '>' && tag_string[i] != '/')
+			// get the attributes
+			while(i < len - 1)
 			{
+				if(tag_string[i] == '\'')
+				{
+					if(!quotes)
+					{
+						quotes++;
+					}
+					else if(quotes == 1)
+					{
+						quotes--;
+					}
+				}
+				else if(tag_string[i] == '"')
+				{
+					if(!quotes)
+					{
+						quotes += 2;
+					}
+					else if(quotes == 2)
+					{
+						quotes -= 2;
+					}
+				}
+				
 				attr_builder << tag_string[i++];
+				
+				if(!quotes && (tag_string[i] == '>' || tag_string[i] == '/'))
+				{
+					break;
+				}
 			}
+			
 		}
 	}
 	else if(tag_string[1] == '?')
@@ -739,9 +772,37 @@ int parseTag(std::string tag_string, peach::tag_t* tag)
 		{
 			if(tag_string[i] == '?')
 				i++;
-			while(tag_string[i] != '>' && tag_string[i] != '?')
+			while(i < len - 1)
 			{
+				if(tag_string[i] == '\'')
+				{
+					if(!quotes)
+					{
+						quotes++;
+					}
+					else if(quotes == 1)
+					{
+						quotes--;
+					}
+				}
+				else if(tag_string[i] == '"')
+				{
+					if(!quotes)
+					{
+						quotes += 2;
+					}
+					else if(quotes == 2)
+					{
+						quotes -= 2;
+					}
+				}
+				
 				attr_builder << tag_string[i++];
+				
+				if(!quotes && (tag_string[i] == '>' || tag_string[i] == '?'))
+				{
+					break;
+				}
 			}
 		}
 	}
