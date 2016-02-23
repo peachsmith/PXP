@@ -216,7 +216,7 @@ int validate(std::string source, std::stringstream& parsable)
 
 peach::elem_t* parse(std::string input)
 {
-
+	std::cout << "parsing..." << std::endl;
 	int validation_error;
 	std::stringstream parsable;
 	std::string source;
@@ -258,6 +258,7 @@ peach::elem_t* parse(std::string input)
 	
 	for(int i = 0; i < len; i++)
 	{
+		std::cout << source[i] << std::endl;
 		if(i - prev_i == 5)
 		{
 			std::cout << "here we go" << std::endl;
@@ -270,6 +271,7 @@ peach::elem_t* parse(std::string input)
 		// previous open tag
 		if(tag)
 		{
+			/*
 			if(i - prev_i == 5)
 			{
 				std::cout << "doing tag stuff" << std::endl;
@@ -338,8 +340,9 @@ peach::elem_t* parse(std::string input)
 			}
 			else
 			{
+				*/
 				text_builder << source[i];
-			}
+			//}
 		}
 		else if(source[i] != '<' && open)
 		{
@@ -415,7 +418,7 @@ peach::elem_t* parse(std::string input)
 		{
 			if(i - prev_i == 5)
 			{
-				std::cout << "argle bargle butt" << std::endl;
+				std::cout << "nonsense" << std::endl;
 			}
 			if(text_builder.tellp() > 0)
 			{
