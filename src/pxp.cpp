@@ -254,22 +254,169 @@ peach::elem_t* parse(std::string input)
 	depth = 0;
 	root_element = 0;
 	len = source.length();
+	int prev_i = 0;
 	
 	for(int i = 0; i < len; i++)
 	{
+		if(i - prev_i == 5)
+		{
+			std::cout << "here we go" << std::endl;
+		}
+		else
+		{
+			prev_i = i;
+		}
 		// stuff outside of tags is considered text content of the
 		// previous open tag
 		if(tag)
 		{
-			tag_builder << source[i];
+			if(i - prev_i == 5)
+			{
+				std::cout << "doing tag stuff" << std::endl;
+				std::cout << "i = " << i << std::endl;
+				std::cout << "len = " << len << std::endl;
+				std::cout << "source[i] = " << source[i] << std::endl;
+			}
+			if (source[i] == '&')
+			{
+				if(i < len - 3)
+				{
+					if(source[i + 2] == 't')
+					{
+						if(source[i + 1] == 'l' && source[i + 3] == ';')
+						{
+							std::cout << "found <" << std::endl;
+							text_builder << "<";
+							i += 3;
+							continue;
+						}
+						else if(source[i + 1] == 'g' && source[i + 3] == ';')
+						{
+							std::cout << "found >" << std::endl;
+							text_builder << "<";
+							i += 3;
+							continue;
+						}
+					}
+					else if(source[i + 1] == 'a')
+					{
+						if(i < len - 5 && source[i + 2] == 'p' && source[i + 3] == 'o')
+						{
+							if(source[i + 4] == 's' && source[i + 5] == ';')
+							{
+								std::cout << "found '" << std::endl;
+								text_builder << "'";
+								i += 5;
+								continue;
+							}
+						}
+						else if(i < len - 4 && source[i + 2] == 'm')
+						{
+							if(source[i + 3] == 'p' && source[i + 4] == ';')
+							{
+								std::cout << "found &" << std::endl;
+								std::cout << "i = " << i << std::endl;
+								std::cout << "len = " << len << std::endl;
+								std::cout << "source[i + 5] = " << source[i + 5] << std::endl;
+								text_builder << "&";
+								i += 4;
+								continue;
+							}
+						}
+					}
+					else if(i < len - 5 && source[i + 1] == 'q' && source[i + 2] == 'u')
+					{
+						if(source[i + 3] == 'o' && source[i + 4] == 't' && source[i + 5] == ';')
+						{
+							std::cout << "found \"" << std::endl;
+							text_builder << "\"";
+							i += 5;
+							continue;
+						}
+					}
+				}
+			}
+			else
+			{
+				text_builder << source[i];
+			}
 		}
 		else if(source[i] != '<' && open)
 		{
-			text_builder << source[i];
+			if(i - prev_i == 5)
+			{
+				std::cout << "doing open stuff" << std::endl;
+				std::cout << "i = " << i << std::endl;
+				std::cout << "len = " << len << std::endl;
+			}
+			if (source[i] == '&')
+			{
+				if(i < len - 3)
+				{
+					if(source[i + 2] == 't')
+					{
+						if(source[i + 1] == 'l' && source[i + 3] == ';')
+						{
+							std::cout << "found <" << std::endl;
+							text_builder << "<";
+							i += 3;
+							continue;
+						}
+						else if(source[i + 1] == 'g' && source[i + 3] == ';')
+						{
+							std::cout << "found >" << std::endl;
+							text_builder << "<";
+							i += 3;
+							continue;
+						}
+					}
+					else if(source[i + 1] == 'a')
+					{
+						if(i < len - 5 && source[i + 2] == 'p' && source[i + 3] == 'o')
+						{
+							if(source[i + 4] == 's' && source[i + 5] == ';')
+							{
+								std::cout << "found '" << std::endl;
+								text_builder << "'";
+								i += 5;
+								continue;
+							}
+						}
+						else if(i < len - 4 && source[i + 2] == 'm')
+						{
+							if(source[i + 3] == 'p' && source[i + 4] == ';')
+							{
+								std::cout << "found &" << std::endl;
+								text_builder << "&";
+								i += 4;
+								continue;
+							}
+						}
+					}
+					else if(i < len - 5 && source[i + 1] == 'q' && source[i + 2] == 'u')
+					{
+						if(source[i + 3] == 'o' && source[i + 4] == 't' && source[i + 5] == ';')
+						{
+							std::cout << "found \"" << std::endl;
+							text_builder << "\"";
+							i += 5;
+							continue;
+						}
+					}
+				}
+			}
+			else
+			{
+				text_builder << source[i];
+			}
 		}
 		
 		if(source[i] == '<' && !quotes)
 		{
+			if(i - prev_i == 5)
+			{
+				std::cout << "argle bargle butt" << std::endl;
+			}
 			if(text_builder.tellp() > 0)
 			{
 				int ti = tags.size() - 1;
@@ -379,6 +526,7 @@ peach::elem_t* parse(std::string input)
 				quotes -= 2;
 			}
 		}
+
 	}
 	
 	int tags_size = tags.size();

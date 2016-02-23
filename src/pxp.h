@@ -37,6 +37,13 @@
 #define TAG_SINGLE 3
 #define TAG_PROLOG 4
 
+/* escape codes */
+#define ESCAPE_AMPERSAND 5
+#define ESCAPE_LESS_THAN 6
+#define ESCAPE_GREATER_THAN 7
+#define ESCAPE_QUOTE 8
+#define ESCAPE_APOSTROPHE 9
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
