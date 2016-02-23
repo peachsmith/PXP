@@ -216,7 +216,6 @@ int validate(std::string source, std::stringstream& parsable)
 
 peach::elem_t* parse(std::string input)
 {
-	std::cout << "parsing..." << std::endl;
 	int validation_error;
 	std::stringstream parsable;
 	std::string source;
@@ -254,104 +253,17 @@ peach::elem_t* parse(std::string input)
 	depth = 0;
 	root_element = 0;
 	len = source.length();
-	int prev_i = 0;
 	
 	for(int i = 0; i < len; i++)
 	{
-		std::cout << source[i] << std::endl;
-		if(i - prev_i == 5)
-		{
-			std::cout << "here we go" << std::endl;
-		}
-		else
-		{
-			prev_i = i;
-		}
 		// stuff outside of tags is considered text content of the
 		// previous open tag
 		if(tag)
 		{
-			/*
-			if(i - prev_i == 5)
-			{
-				std::cout << "doing tag stuff" << std::endl;
-				std::cout << "i = " << i << std::endl;
-				std::cout << "len = " << len << std::endl;
-				std::cout << "source[i] = " << source[i] << std::endl;
-			}
-			if (source[i] == '&')
-			{
-				if(i < len - 3)
-				{
-					if(source[i + 2] == 't')
-					{
-						if(source[i + 1] == 'l' && source[i + 3] == ';')
-						{
-							std::cout << "found <" << std::endl;
-							text_builder << "<";
-							i += 3;
-							continue;
-						}
-						else if(source[i + 1] == 'g' && source[i + 3] == ';')
-						{
-							std::cout << "found >" << std::endl;
-							text_builder << "<";
-							i += 3;
-							continue;
-						}
-					}
-					else if(source[i + 1] == 'a')
-					{
-						if(i < len - 5 && source[i + 2] == 'p' && source[i + 3] == 'o')
-						{
-							if(source[i + 4] == 's' && source[i + 5] == ';')
-							{
-								std::cout << "found '" << std::endl;
-								text_builder << "'";
-								i += 5;
-								continue;
-							}
-						}
-						else if(i < len - 4 && source[i + 2] == 'm')
-						{
-							if(source[i + 3] == 'p' && source[i + 4] == ';')
-							{
-								std::cout << "found &" << std::endl;
-								std::cout << "i = " << i << std::endl;
-								std::cout << "len = " << len << std::endl;
-								std::cout << "source[i + 5] = " << source[i + 5] << std::endl;
-								text_builder << "&";
-								i += 4;
-								continue;
-							}
-						}
-					}
-					else if(i < len - 5 && source[i + 1] == 'q' && source[i + 2] == 'u')
-					{
-						if(source[i + 3] == 'o' && source[i + 4] == 't' && source[i + 5] == ';')
-						{
-							std::cout << "found \"" << std::endl;
-							text_builder << "\"";
-							i += 5;
-							continue;
-						}
-					}
-				}
-			}
-			else
-			{
-				*/
-				text_builder << source[i];
-			//}
+			tag_builder << source[i];
 		}
 		else if(source[i] != '<' && open)
 		{
-			if(i - prev_i == 5)
-			{
-				std::cout << "doing open stuff" << std::endl;
-				std::cout << "i = " << i << std::endl;
-				std::cout << "len = " << len << std::endl;
-			}
 			if (source[i] == '&')
 			{
 				if(i < len - 3)
@@ -360,17 +272,19 @@ peach::elem_t* parse(std::string input)
 					{
 						if(source[i + 1] == 'l' && source[i + 3] == ';')
 						{
-							std::cout << "found <" << std::endl;
 							text_builder << "<";
 							i += 3;
 							continue;
 						}
 						else if(source[i + 1] == 'g' && source[i + 3] == ';')
 						{
-							std::cout << "found >" << std::endl;
-							text_builder << "<";
+							text_builder << ">";
 							i += 3;
 							continue;
+						}
+						else
+						{
+							return 0;
 						}
 					}
 					else if(source[i + 1] == 'a')
@@ -379,20 +293,26 @@ peach::elem_t* parse(std::string input)
 						{
 							if(source[i + 4] == 's' && source[i + 5] == ';')
 							{
-								std::cout << "found '" << std::endl;
 								text_builder << "'";
 								i += 5;
 								continue;
+							}
+							else
+							{
+								return 0;
 							}
 						}
 						else if(i < len - 4 && source[i + 2] == 'm')
 						{
 							if(source[i + 3] == 'p' && source[i + 4] == ';')
 							{
-								std::cout << "found &" << std::endl;
 								text_builder << "&";
 								i += 4;
 								continue;
+							}
+							else
+							{
+								return 0;
 							}
 						}
 					}
@@ -400,13 +320,19 @@ peach::elem_t* parse(std::string input)
 					{
 						if(source[i + 3] == 'o' && source[i + 4] == 't' && source[i + 5] == ';')
 						{
-							std::cout << "found \"" << std::endl;
 							text_builder << "\"";
 							i += 5;
 							continue;
 						}
+						else
+						{
+							return 0;
+						}
 					}
 				}
+				// found a '&' followed by insufficient characters for an
+				// escape character
+				return 0;
 			}
 			else
 			{
@@ -416,10 +342,6 @@ peach::elem_t* parse(std::string input)
 		
 		if(source[i] == '<' && !quotes)
 		{
-			if(i - prev_i == 5)
-			{
-				std::cout << "nonsense" << std::endl;
-			}
 			if(text_builder.tellp() > 0)
 			{
 				int ti = tags.size() - 1;
@@ -630,15 +552,20 @@ void printElements(peach::elem_t* root, int indent)
 		// print text content
 		for(int i = 0; i < root->text.size(); i++)
 		{
-			std::cout << std::setw(indent + 2) << std::setfill(' ') << "";
-			std::cout << "text " << i << ": ";
+			//std::cout << std::setw(indent + 2) << std::setfill(' ') << "";
+			//std::cout << "text " << i << ": ";
 			if(peach::allWhitespace(root->text[i]))
 			{
-				std::cout << "[whitespace]" << std::endl;
+				if(i == 0)
+				{
+					std::cout << std::setw(indent + 2) << std::setfill(' ') << "";
+					std::cout << "text " << i << ": " << "[whitespace]" << std::endl;
+				}
 			}
 			else
 			{
-				std::cout << root->text[i] << std::endl;
+				std::cout << std::setw(indent + 2) << std::setfill(' ') << "";
+				std::cout << "text " << i << ": " << root->text[i] << std::endl;
 			}
 		}
 	}
@@ -1022,6 +949,7 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 					nam++;
 				}
 				
+				// skip whitespace
 				while(peach::isWhitespace(attr_string[i]) && i < len - 1)
 				{
 					i++;
@@ -1055,7 +983,77 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 					i++;
 					while(attr_string[i] != '\'' && i < len - 1)
 					{
-						value_builder << attr_string[i++];
+						if (attr_string[i] == '&')
+						{
+							if(i < len - 3)
+							{
+								if(attr_string[i + 2] == 't')
+								{
+									if(attr_string[i + 1] == 'l' && attr_string[i + 3] == ';')
+									{
+										value_builder << "<";
+										i += 4;
+										continue;
+									}
+									else if(attr_string[i + 1] == 'g' && attr_string[i + 3] == ';')
+									{
+										value_builder << ">";
+										i += 4;
+										continue;
+									}
+									else
+									{
+										return 0;
+									}
+								}
+								else if(attr_string[i + 1] == 'a')
+								{
+									if(i < len - 5 && attr_string[i + 2] == 'p' && attr_string[i + 3] == 'o')
+									{
+										if(attr_string[i + 4] == 's' && attr_string[i + 5] == ';')
+										{
+											value_builder << "'";
+											i += 6;
+											continue;
+										}
+										else
+										{
+											return 0;
+										}
+									}
+									else if(i < len - 4 && attr_string[i + 2] == 'm')
+									{
+										if(attr_string[i + 3] == 'p' && attr_string[i + 4] == ';')
+										{
+											value_builder << "&";
+											i += 5;
+											continue;
+										}
+										else
+										{
+											return 0;
+										}
+									}
+								}
+								else if(i < len - 5 && attr_string[i + 1] == 'q' && attr_string[i + 2] == 'u')
+								{
+									if(attr_string[i + 3] == 'o' && attr_string[i + 4] == 't' && attr_string[i + 5] == ';')
+									{
+										value_builder << "\"";
+										i += 6;
+										continue;
+									}
+									else
+									{
+										return 0;
+									}
+								}
+							}
+						}
+						else
+						{
+							value_builder << attr_string[i++];
+						}
 					}
 					if(attr_string[i] == '\'')
 					{
@@ -1072,7 +1070,77 @@ int parseAttributes(std::string attr_string, std::vector<peach::attr_t*>& attrib
 					i++;
 					while(attr_string[i] != '"' && i < len - 1)
 					{
-						value_builder << attr_string[i++];
+						if (attr_string[i] == '&')
+						{
+							if(i < len - 3)
+							{
+								if(attr_string[i + 2] == 't')
+								{
+									if(attr_string[i + 1] == 'l' && attr_string[i + 3] == ';')
+									{
+										value_builder << "<";
+										i += 4;
+										continue;
+									}
+									else if(attr_string[i + 1] == 'g' && attr_string[i + 3] == ';')
+									{
+										value_builder << ">";
+										i += 4;
+										continue;
+									}
+									else
+									{
+										return 0;
+									}
+								}
+								else if(attr_string[i + 1] == 'a')
+								{
+									if(i < len - 5 && attr_string[i + 2] == 'p' && attr_string[i + 3] == 'o')
+									{
+										if(attr_string[i + 4] == 's' && attr_string[i + 5] == ';')
+										{
+											value_builder << "'";
+											i += 6;
+											continue;
+										}
+										else
+										{
+											return 0;
+										}
+									}
+									else if(i < len - 4 && attr_string[i + 2] == 'm')
+									{
+										if(attr_string[i + 3] == 'p' && attr_string[i + 4] == ';')
+										{
+											value_builder << "&";
+											i += 5;
+											continue;
+										}
+										else
+										{
+											return 0;
+										}
+									}
+								}
+								else if(i < len - 5 && attr_string[i + 1] == 'q' && attr_string[i + 2] == 'u')
+								{
+									if(attr_string[i + 3] == 'o' && attr_string[i + 4] == 't' && attr_string[i + 5] == ';')
+									{
+										value_builder << "\"";
+										i += 6;
+										continue;
+									}
+									else
+									{
+										return 0;
+									}
+								}
+							}
+						}
+						else
+						{
+							value_builder << attr_string[i++];
+						}
 					}
 					if(attr_string[i] == '"')
 					{

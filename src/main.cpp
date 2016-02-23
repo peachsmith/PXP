@@ -22,7 +22,7 @@
 using std::cout;
 using std::endl;
 	
-int main()
+int main(int argc, char** argv)
 {	
 	std::ifstream in_file;
 	std::stringstream source_stream;
@@ -31,8 +31,15 @@ int main()
 	std::vector<peach::elem_t*> speed;
 	std::vector<peach::attr_t*> units;
 	
-	in_file.open("configuration.xml");
-
+	if(argc == 2)
+	{
+		in_file.open(argv[1]);
+	}
+	else
+	{
+		in_file.open("configuration.xml");
+	}
+	
 	if(in_file.is_open())
 	{	
 		source_stream << in_file.rdbuf();
@@ -43,23 +50,23 @@ int main()
 		if(root)
 		{
 			peach::printElements(root, 0);
-			// speed = peach::getElementsByName(root, "speed");
+			speed = peach::getElementsByName(root, "speed");
 
-			// if(speed.size() > 0)
-			// {
-			// 	cout << "name: " << speed[0]->name << endl;
+			if(speed.size() > 0)
+			{
+				cout << "name: " << speed[0]->name << endl;
 
-			// 	units = peach::getAttributesByName(speed[0], "units");
+			 	units = peach::getAttributesByName(speed[0], "units");
 
-			// 	if(units.size() > 0)
-			// 	{
-			// 		cout << "units: " << units[0]->value << endl;
-			// 	}
-			// 	if(speed[0]->text.size() > 0)
-			// 	{
-			// 		cout << "text: " << speed[0]->text[0] << endl;
-			// 	}
-			// }
+			 	if(units.size() > 0)
+			 	{
+			 		cout << "units: " << units[0]->value << endl;
+			 	}
+			 	if(speed[0]->text.size() > 0)
+			 	{
+			 		cout << "text: " << speed[0]->text[0] << endl;
+			 	}
+			}
 			
 			peach::destroyElements(root);
 		}
